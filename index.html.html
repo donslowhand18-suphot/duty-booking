@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจองเวร พฤษภาคม 2569 — โรงพยาบาลสวนผึ้ง</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1F4E79;
+    --blue: #2E75B6;
+    --blue-light: #D6E4F0;
+    --green: #1D6A35;
+    --green-light: #D4EDDA;
+    --amber: #7B5B00;
+    --amber-light: #FFF3CD;
+    --purple: #4A3B8C;
+    --purple-light: #EAE6F8;
+    --red: #991B1B;
+    --red-light: #FECACA;
+    --gray: #6B7280;
+    --border: #E5E7EB;
+    --bg: #F8FAFC;
+    --white: #ffffff;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Sarabun', sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.6; }
+
+  /* Header */
+  .header { background: var(--navy); color: #fff; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; box-shadow: var(--shadow-md); }
+  .header-title { font-size: 18px; font-weight: 600; }
+  .header-sub { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+  .header-badge { background: rgba(255,255,255,0.15); border-radius: 20px; padding: 4px 12px; font-size: 12px; }
+
+  /* Main Layout */
+  .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+
+  /* User selector bar */
+  .user-bar { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: var(--shadow); }
+  .user-bar label { font-size: 13px; font-weight: 500; color: var(--text-muted); white-space: nowrap; }
+  .user-bar select { flex: 1; min-width: 220px; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius); font-family: 'Sarabun', sans-serif; font-size: 14px; color: var(--text); background: #fff; cursor: pointer; transition: border-color 0.2s; }
+  .user-bar select:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(46,117,182,0.12); }
+  .my-count { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+  .my-count b { color: var(--navy); font-weight: 600; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+  .tab-btn { padding: 10px 20px; background: none; border: none; border-bottom: 2px solid transparent; margin-bottom: -2px; cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 14px; font-weight: 500; color: var(--text-muted); transition: all 0.2s; }
+  .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* Calendar */
+  .cal-header { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 4px; }
+  .cal-dow { text-align: center; font-size: 12px; font-weight: 600; padding: 6px 0; color: var(--text-muted); }
+  .cal-dow.weekend { color: var(--amber); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
+
+  .cal-cell { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 7px; min-height: 90px; cursor: pointer; transition: all 0.15s; }
+  .cal-cell:hover { border-color: var(--blue); box-shadow: var(--shadow); transform: translateY(-1px); }
+  .cal-cell.selected { border-color: var(--navy); border-width: 2px; box-shadow: var(--shadow-md); }
+  .cal-cell.is-mine { background: #F0F7FF; border-color: #93C5FD; }
+  .cal-cell.is-weekend { background: #FFFBEB; }
+  .cal-cell.is-holiday { background: #FFFBEB; border-color: #FCD34D; }
+  .cal-cell.empty { background: none; border-color: transparent; cursor: default; box-shadow: none; transform: none; }
+
+  .day-num { font-size: 14px; font-weight: 600; color: var(--text); }
+  .day-num.weekend-txt { color: var(--amber); }
+  .hol-name { font-size: 9px; color: var(--amber); margin-top: 1px; line-height: 1.2; }
+  .day-slots { margin-top: 5px; display: flex; flex-direction: column; gap: 3px; }
+
+  .slot-chip { font-size: 9px; font-weight: 600; padding: 2px 5px; border-radius: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.5; }
+  .chip-bk { background: var(--purple-light); color: var(--purple); }
+  .chip-ch { background: var(--green-light); color: var(--green); }
+  .chip-chbk { background: var(--amber-light); color: var(--amber); }
+  .chip-empty { background: #F3F4F6; color: #9CA3AF; }
+
+  .full-badge { font-size: 8px; background: var(--red-light); color: var(--red); padding: 1px 4px; border-radius: 3px; }
+
+  /* Detail panel */
+  .detail-panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; margin-top: 16px; box-shadow: var(--shadow-md); }
+  .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .detail-title { font-size: 17px; font-weight: 600; color: var(--navy); }
+  .detail-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-muted); line-height: 1; padding: 0 4px; }
+  .close-btn:hover { color: var(--text); }
+
+  .slot-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 8px; transition: background 0.15s; }
+  .slot-row.filled-bk { background: var(--purple-light); border-color: #C4B5FD; }
+  .slot-row.filled-ch { background: var(--green-light); border-color: #86EFAC; }
+  .slot-row.filled-chbk { background: var(--amber-light); border-color: #FCD34D; }
+  .slot-label { font-size: 14px; font-weight: 500; }
+  .slot-time { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .slot-who { font-size: 13px; font-weight: 600; margin-top: 3px; }
+  .slot-ts { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+  .btn-book { background: var(--navy); color: #fff; border: none; padding: 8px 18px; border-radius: var(--radius); cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 13px; font-weight: 500; transition: background 0.2s; white-space: nowrap; }
+  .btn-book:hover { background: var(--blue); }
+  .btn-cancel { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; padding: 7px 16px; border-radius: var(--radius); cursor: pointer; font-family: 'Sarabun', sans-serif; font-size: 13px; font-weight: 500; transition: all 0.2s; }
+  .btn-cancel:hover { background: #FEE2E2; }
+  .slot-hint { font-size: 11px; color: var(--text-muted); }
+
+  /* My days */
+  .my-days-wrap { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 14px 18px; margin-top: 16px; box-shadow: var(--shadow); }
+  .my-days-label { font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .my-day-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .day-tag { font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 20px; cursor: pointer; border: 1px solid transparent; transition: opacity 0.15s; }
+  .day-tag:hover { opacity: 0.75; }
+  .tag-bk { background: var(--purple-light); color: var(--purple); border-color: #C4B5FD; }
+  .tag-ch { background: var(--green-light); color: var(--green); border-color: #86EFAC; }
+  .tag-chbk { background: var(--amber-light); color: var(--amber); border-color: #FCD34D; }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 11px 22px; border-radius: 24px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-md); z-index: 9999; transition: opacity 0.3s; animation: slideUp 0.3s ease; }
+  .toast-ok { background: #D1FAE5; color: #065F46; border: 1px solid #6EE7B7; }
+  .toast-err { background: var(--red-light); color: var(--red); border: 1px solid #FCA5A5; }
+  .toast-info { background: var(--blue-light); color: var(--navy); border: 1px solid #93C5FD; }
+  @keyframes slideUp { from { bottom: 8px; opacity: 0; } to { bottom: 24px; opacity: 1; } }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 3px; }
+
+  /* Summary tab */
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .summary-table th { padding: 10px 12px; text-align: left; background: var(--navy); color: #fff; font-weight: 500; font-size: 12px; }
+  .summary-table th:first-child { border-radius: var(--radius) 0 0 0; }
+  .summary-table th:last-child { border-radius: 0 var(--radius) 0 0; }
+  .summary-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .summary-table tr:hover td { background: #F8FAFC; }
+  .summary-table tr.me td { background: #EFF6FF; }
+  .day-cov-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px,1fr)); gap: 6px; margin-top: 16px; }
+  .day-cov-card { padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--white); }
+  .day-cov-card.full { background: #D1FAE5; border-color: #6EE7B7; }
+  .day-cov-card.partial { background: #FEF9C3; border-color: #FCD34D; }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin: 20px 0 10px; }
+
+  @media (max-width: 600px) {
+    .container { padding: 12px 8px; }
+    .cal-cell { min-height: 70px; padding: 5px 4px; }
+    .day-num { font-size: 12px; }
+    .header { padding: 12px 16px; }
+    .header-title { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title">ระบบจองเวรนอกเวลาราชการ</div>
+    <div class="header-sub">ฝ่ายเภสัชกรรมชุมชน โรงพยาบาลสวนผึ้ง</div>
+  </div>
+  <div class="header-badge">พฤษภาคม 2569</div>
+</div>
+
+<div class="container">
+  <div id="app"></div>
+</div>
+
+<script>
+const STORAGE_KEY = "duty_may2569";
+
+const PHARMACISTS = [
+  {id:"p1",name:"พรชนัน",full:"พรชนัน สุขเจริญชัยกิจ",role:"pharm"},
+  {id:"p2",name:"เดือนเด่น",full:"เดือนเด่น บุญรังสรรค์",role:"pharm"},
+  {id:"p3",name:"วรินทรา",full:"วรินทรา จรัสเกื้อกูลพงศ์",role:"pharm"},
+  {id:"p4",name:"กมลลักษณ์",full:"กมลลักษณ์ มุสิกาภูมิ",role:"pharm"},
+];
+const STAFF = [
+  {id:"s1",name:"จารุวรรณ",full:"จารุวรรณ จันทภูมิ",role:"staff"},
+  {id:"s2",name:"ภูริวัจน์",full:"ภูริวัจน์ ศรีเคลือบ",role:"staff"},
+  {id:"s3",name:"ปริศนา",full:"ปริศนา ทองเสน",role:"staff"},
+  {id:"s4",name:"กุลรัตน์",full:"กุลรัตน์ มนต์เจ็ก",role:"staff"},
+  {id:"s5",name:"มณฑิตา",full:"มณฑิตา จินดาอยู่",role:"staff"},
+  {id:"s6",name:"นิพนธ์",full:"นิพนธ์ วัฒนาเวียงบัลมี่",role:"staff"},
+];
+const ALL = [...PHARMACISTS, ...STAFF];
+
+// May 1, 2026 = Thursday → col index 3 (Mon=0)
+const OFFSET = 3;
+const WEEKENDS = new Set([2,3,9,10,16,17,23,24,30,31]);
+const HOLIDAYS = new Set([1,4]);
+const HNAMES = {1:"วันแรงงาน", 4:"วันฉัตรมงคล"};
+const SPECIAL = new Set([...WEEKENDS, ...HOLIDAYS]);
+const DOW = ["จ","อ","พ","พฤ","ศ","ส","อา"];
+
+const SHIFT_TIME = {"บค":"16.00–24.00 น.", "ช":"08.30–16.00 น.", "ชบค":"08.30–24.00 น."};
+const CHIP_CLASS = {"บค":"chip-bk","ช":"chip-ch","ชบค":"chip-chbk"};
+const FILLED_CLASS = {"บค":"filled-bk","ช":"filled-ch","ชบค":"filled-chbk"};
+const TAG_CLASS = {"บค":"tag-bk","ช":"tag-ch","ชบค":"tag-chbk"};
+
+function slotDef(day) {
+  if (SPECIAL.has(day)) return [
+    {id:"pharm", label:"เภสัชกร", shift:"ชบค", roles:["pharm"]},
+    {id:"st_ch", label:"เจ้าหน้าที่ (เช้า)", shift:"ช", roles:["staff"]},
+    {id:"st_ck", label:"เจ้าหน้าที่ (เต็มวัน)", shift:"ชบค", roles:["staff"]},
+  ];
+  return [
+    {id:"pharm", label:"เภสัชกร", shift:"บค", roles:["pharm"]},
+    {id:"staff", label:"เจ้าหน้าที่", shift:"บค", roles:["staff"]},
+  ];
+}
+
+let STATE = {
+  user: localStorage.getItem("duty_user") || "",
+  regs: {},
+  selDay: null,
+  tab: "cal",
+};
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) STATE.regs = JSON.parse(raw);
+  } catch(e) { STATE.regs = {}; }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE.regs));
+}
+
+function setUser(uid) {
+  STATE.user = uid;
+  STATE.selDay = null;
+  localStorage.setItem("duty_user", uid);
+  render();
+}
+
+function getPersonDays(pid) {
+  return Object.keys(STATE.regs).filter(d => STATE.regs[d].some(r => r.pid === pid)).map(Number).sort((a,b) => a-b);
+}
+
+function hasConsec(pid, newDay) {
+  const days = getPersonDays(pid);
+  return days.includes(newDay-1) || days.includes(newDay+1);
+}
+
+let toastTimer = null;
+function showToast(msg, type="ok") {
+  const el = document.getElementById("toast-el");
+  if (el) el.remove();
+  if (toastTimer) clearTimeout(toastTimer);
+  const t = document.createElement("div");
+  t.id = "toast-el";
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  toastTimer = setTimeout(() => { if (t.parentNode) t.remove(); }, 3000);
+}
+
+function doRegister(day, slotId) {
+  const {user, regs} = STATE;
+  if (!user) return showToast("กรุณาเลือกชื่อก่อน","err");
+  const person = ALL.find(p => p.id === user);
+  const slot = slotDef(day).find(s => s.id === slotId);
+  const dayRegs = regs[day] || [];
+  if (dayRegs.some(r => r.pid === user)) return showToast("คุณลงทะเบียนวันนี้แล้ว","err");
+  if (!slot.roles.includes(person.role)) return showToast("ตำแหน่งของคุณไม่ตรงกับช่องนี้","err");
+  if (dayRegs.filter(r => r.sid === slotId).length >= 1) return showToast("ช่องเวรนี้มีคนจองแล้ว","err");
+  if (hasConsec(user, day)) return showToast("ไม่สามารถจองวันติดกันได้","err");
+  STATE.regs = {...regs, [day]: [...dayRegs, {pid:user, sid:slotId, shift:slot.shift, ts:Date.now()}]};
+  saveData();
+  showToast(`จองวันที่ ${day} พ.ค. สำเร็จ ✓`);
+  render();
+}
+
+function doCancel(day) {
+  const {user, regs} = STATE;
+  if (!user) return;
+  const newDay = (regs[day]||[]).filter(r => r.pid !== user);
+  const newRegs = {...regs};
+  if (newDay.length === 0) delete newRegs[day]; else newRegs[day] = newDay;
+  STATE.regs = newRegs;
+  STATE.selDay = null;
+  saveData();
+  showToast("ยกเลิกการจองแล้ว","info");
+  render();
+}
+
+function clearAllData() {
+  if (!confirm("ต้องการล้างข้อมูลการจองทั้งหมดใช่ไหม?\n(ไม่สามารถกู้คืนได้)")) return;
+  STATE.regs = {};
+  saveData();
+  showToast("ล้างข้อมูลทั้งหมดแล้ว","info");
+  render();
+}
+
+function render() {
+  const {user, regs, selDay, tab} = STATE;
+  const person = ALL.find(p => p.id === user);
+  const myDays = user ? getPersonDays(user) : [];
+
+  // Build cells
+  const cells = [];
+  for (let i = 0; i < OFFSET; i++) cells.push(null);
+  for (let d = 1; d <= 31; d++) cells.push(d);
+
+  let h = `
+  <div class="user-bar">
+    <label>ฉันคือ:</label>
+    <select onchange="setUser(this.value)">
+      <option value="">— เลือกชื่อ —</option>
+      <optgroup label="เภสัชกร">
+        ${PHARMACISTS.map(p=>`<option value="${p.id}"${user===p.id?" selected":""}>${p.full}</option>`).join("")}
+      </optgroup>
+      <optgroup label="เจ้าหน้าที่ / พนักงาน">
+        ${STAFF.map(p=>`<option value="${p.id}"${user===p.id?" selected":""}>${p.full}</option>`).join("")}
+      </optgroup>
+    </select>
+    ${user ? `<span class="my-count">จองแล้ว <b>${myDays.length}</b> วัน</span>` : ""}
+    <div style="margin-left:auto;display:flex;gap:0;border:1px solid #E5E7EB;border-radius:var(--radius);overflow:hidden">
+      <button onclick="STATE.tab='cal';render()" style="padding:6px 14px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;background:${tab==="cal"?"var(--navy)":"#fff"};color:${tab==="cal"?"#fff":"var(--text-muted)"}">ปฏิทิน</button>
+      <button onclick="STATE.tab='sum';render()" style="padding:6px 14px;border:none;border-left:1px solid #E5E7EB;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px;font-weight:500;background:${tab==="sum"?"var(--navy)":"#fff"};color:${tab==="sum"?"#fff":"var(--text-muted)"}">สรุปเวร</button>
+    </div>
+  </div>`;
+
+  if (tab === "cal") {
+    h += `<div class="cal-header">`;
+    DOW.forEach(d => {
+      const we = d==="ส"||d==="อา";
+      h += `<div class="cal-dow${we?" weekend":""}">${d}</div>`;
+    });
+    h += `</div><div class="cal-grid">`;
+
+    cells.forEach((day, idx) => {
+      if (!day) { h += `<div class="cal-cell empty"></div>`; return; }
+      const isSp = SPECIAL.has(day), isWe = WEEKENDS.has(day), isHol = HOLIDAYS.has(day);
+      const slots = slotDef(day);
+      const dr = regs[day] || [];
+      const isMine = user && dr.some(r => r.pid === user);
+      const isSel = selDay === day;
+      const filled = slots.filter(s => dr.some(r => r.sid === s.id)).length;
+      const full = filled === slots.length;
+      let cls = "cal-cell";
+      if (isSel) cls += " selected";
+      else if (isMine) cls += " is-mine";
+      else if (isHol) cls += " is-holiday";
+      else if (isWe) cls += " is-weekend";
+
+      h += `<div class="${cls}" onclick="STATE.selDay=STATE.selDay===${day}?null:${day};render()">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <span class="day-num${isWe||isHol?" weekend-txt":""}">${day}</span>
+          ${full ? `<span class="full-badge">เต็ม</span>` : ""}
+        </div>
+        ${isHol ? `<div class="hol-name">${HNAMES[day]}</div>` : ""}
+        <div class="day-slots">`;
+      slots.forEach(slot => {
+        const reg = dr.find(r => r.sid === slot.id);
+        const rp = reg ? ALL.find(p => p.id === reg.pid) : null;
+        if (reg) h += `<div class="slot-chip ${CHIP_CLASS[slot.shift]}">${rp?.name||"—"}</div>`;
+        else h += `<div class="slot-chip chip-empty">${slot.id==="pharm"?"เภสัช":"เจ้าหน้าที่"}: ว่าง</div>`;
+      });
+      h += `</div></div>`;
+    });
+    h += `</div>`;
+
+    // Detail panel
+    if (selDay) {
+      const day = selDay;
+      const slots = slotDef(day);
+      const dr = regs[day] || [];
+      const isMine = user && dr.some(r => r.pid === user);
+      const dowIdx = (OFFSET + day - 1) % 7;
+      h += `<div class="detail-panel">
+        <div class="detail-header">
+          <div>
+            <div class="detail-title">วันที่ ${day} พฤษภาคม 2569</div>
+            <div class="detail-sub">วัน${DOW[dowIdx]}${SPECIAL.has(day)?" · วันหยุด":""}${HOLIDAYS.has(day)?" · "+HNAMES[day]:""}</div>
+          </div>
+          <button class="close-btn" onclick="STATE.selDay=null;render()">×</button>
+        </div>`;
+      slots.forEach(slot => {
+        const reg = dr.find(r => r.sid === slot.id);
+        const rp = reg ? ALL.find(p => p.id === reg.pid) : null;
+        const tsStr = reg ? new Date(reg.ts).toLocaleString("th-TH",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}) : "";
+        const canReg = user && !reg && person && slot.roles.includes(person.role) && !dr.some(r=>r.pid===user) && !hasConsec(user,day);
+        let rowCls = "slot-row";
+        if (reg) rowCls += " " + FILLED_CLASS[slot.shift];
+        h += `<div class="${rowCls}">
+          <div style="flex:1">
+            <div class="slot-label">${slot.label}</div>
+            <div class="slot-time">เวร ${slot.shift} · ${SHIFT_TIME[slot.shift]}</div>
+            ${reg ? `<div class="slot-who">${rp?.full||"—"} <span class="slot-ts">· ${tsStr}</span></div>` : ""}
+          </div>
+          ${canReg ? `<button class="btn-book" onclick="doRegister(${day},'${slot.id}')">จองเวรนี้</button>` : ""}
+          ${!reg && user && !canReg ? `<span class="slot-hint">${!slot.roles.includes(person?.role)?"ไม่ใช่ตำแหน่งนี้":dr.some(r=>r.pid===user)?"จองวันนี้แล้ว":hasConsec(user,day)?"ติดวันอื่น":"ว่าง"}</span>` : ""}
+          ${!reg && !user ? `<span class="slot-hint">ว่าง</span>` : ""}
+        </div>`;
+      });
+      if (isMine) h += `<div style="margin-top:12px;text-align:right"><button class="btn-cancel" onclick="doCancel(${day})">ยกเลิกการจองของฉัน</button></div>`;
+      h += `</div>`;
+    }
+
+    // My days strip
+    if (user && myDays.length > 0) {
+      h += `<div class="my-days-wrap"><div class="my-days-label">เวรของฉัน</div><div class="my-day-tags">`;
+      myDays.forEach(d => {
+        const reg = (regs[d]||[]).find(r => r.pid === user);
+        h += `<span class="${"day-tag "+(TAG_CLASS[reg?.shift]||"")}" onclick="STATE.selDay=${d};render()">${d} พ.ค. · ${reg?.shift||"?"}</span>`;
+      });
+      h += `</div></div>`;
+    }
+
+    // Legend
+    h += `<div class="legend">
+      ${[{l:"วันหยุด/เสาร์-อาทิตย์",cls:"",s:"background:#FFFBEB;border:1px solid #FCD34D"},
+         {l:"เวรของฉัน",cls:"",s:"background:#EFF6FF;border:1px solid #93C5FD"},
+         {l:"บค = 16.00–24.00",cls:"",s:"background:var(--purple-light);border:1px solid #C4B5FD"},
+         {l:"ช = 08.30–16.00",cls:"",s:"background:var(--green-light);border:1px solid #86EFAC"},
+         {l:"ชบค = 08.30–24.00",cls:"",s:"background:var(--amber-light);border:1px solid #FCD34D"}]
+        .map(x=>`<div class="legend-item"><div class="legend-dot" style="${x.s}"></div><span>${x.l}</span></div>`).join("")}
+    </div>`;
+
+  } else {
+    // Summary tab
+    h += `<div>
+      <div class="section-label">สรุปการจองรายบุคคล</div>
+      <div style="overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow)">
+      <table class="summary-table">
+        <thead><tr>
+          <th>ชื่อ-นามสกุล</th>
+          <th style="text-align:center;width:80px">วันเวร</th>
+          <th>วันที่จอง</th>
+        </tr></thead><tbody>`;
+    ALL.forEach(p => {
+      const days = getPersonDays(p.id);
+      const isMe = p.id === user;
+      h += `<tr${isMe?' class="me"':""}>
+        <td>
+          <span style="font-weight:500;color:${p.role==="pharm"?"var(--navy)":"var(--text)"}">${p.full}</span>
+          <span style="font-size:11px;color:var(--text-muted);margin-left:5px">${p.role==="pharm"?"เภสัชกร":"เจ้าหน้าที่"}</span>
+        </td>
+        <td style="text-align:center;font-weight:600;color:${days.length>0?"var(--navy)":"var(--text-muted)"}">${days.length}</td>
+        <td>
+          <div style="display:flex;flex-wrap:wrap;gap:4px">
+            ${days.map(d=>{
+              const reg=(regs[d]||[]).find(r=>r.pid===p.id);
+              return `<span class="day-tag ${TAG_CLASS[reg?.shift]||""}" style="font-size:11px">${d}(${reg?.shift||"?"})</span>`;
+            }).join("")}
+            ${days.length===0?`<span style="color:var(--text-muted);font-size:12px">ยังไม่มีเวร</span>`:""}
+          </div>
+        </td>
+      </tr>`;
+    });
+    h += `</tbody></table></div>`;
+
+    h += `<div class="section-label">สถานะแต่ละวัน</div>
+    <div class="day-cov-grid">`;
+    for (let d = 1; d <= 31; d++) {
+      const slots = slotDef(d);
+      const dr = regs[d] || [];
+      const filled = slots.filter(s => dr.some(r => r.sid === s.id)).length;
+      const full = filled === slots.length;
+      const partial = filled > 0 && !full;
+      const isSp = SPECIAL.has(d);
+      const dowIdx = (OFFSET + d - 1) % 7;
+      h += `<div class="day-cov-card${full?" full":partial?" partial":""}">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:13px;font-weight:600;color:${isSp?"var(--amber)":"var(--text)"}">วันที่ ${d}</span>
+          <span style="font-size:11px;font-weight:600;color:${full?"var(--green)":partial?"#854D0E":"var(--text-muted)"}">${filled}/${slots.length}</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">วัน${DOW[dowIdx]}${HOLIDAYS.has(d)?" · "+HNAMES[d].slice(0,4)+(HNAMES[d].length>4?"..":""):""}</div>
+      </div>`;
+    }
+    h += `</div>`;
+
+    h += `<div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:flex-end">
+      <button onclick="clearAllData()" style="background:none;border:1px solid #FCA5A5;color:var(--red);padding:7px 16px;border-radius:var(--radius);cursor:pointer;font-family:'Sarabun',sans-serif;font-size:13px">ล้างข้อมูลทั้งหมด</button>
+    </div>`;
+    h += `</div>`;
+  }
+
+  document.getElementById("app").innerHTML = h;
+}
+
+loadData();
+render();
+</script>
+</body>
+</html>
